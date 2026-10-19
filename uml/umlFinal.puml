@@ -1,0 +1,380 @@
+@startuml
+
+package "core" {
+    class Game {
+        - _hasDraw: boolean
+        - _turnCounter: int
+        + Game(player: Player)
+        + generateInitialObstacle()
+        + placeCard(indexHand: int, indexBoard: int): PlaceStatus
+        + getBoard(): Board
+        + getPlayer(): Player
+        + draw(player: Player): DrawStatus
+        + sacrifice(index: int): boolean
+        + getScore(): ScoreManager
+        + planOpponentNextTurn()
+        + isGameOver(): boolean
+        + playerWin(): boolean
+        + getTurnCounter(): int
+        + startNewTurn()
+        + applyGrowth()
+        + caseTrad(input: String): int
+        + executeCombatPhase(attacker: Side, defender: Side, defenderPlayer: Player)
+        + getEnemy(): Player
+        + sizeAttackHistory(): int
+        + clearAttackHistory()
+        + getAttackHistory(index: int): AttackData
+        + useSacrificeStone(sourceBoardIndex: int, targetBoardIndex: int): SacrificeStatus
+    }
+
+    class GameDisplay {
+        + GameDisplay()
+        - _playerWins: int = 0
+        - _enemyWins: int = 0
+        - _matchNumber: int = 1
+        + launchGame()
+        + playerMenu(currentGame: Game)
+        - clearConsole()
+        - cardChoice()
+        - displayHistory(currentGame: Game)
+        - sacrificeStoneEvent(currentGame: Game, scanner: Scanner)
+    }
+
+    enum DrawStatus {
+        SUCCESS
+        ALREADY_DRAWN
+        EMPTY_DECK
+    }
+
+    enum PlaceStatus {
+        SUCCESS
+        NOT_ENOUGH_BLOOD
+        NOT_ENOUGH_BONES
+        CELL_OCCUPIED
+        CARD_NOT_FOUND
+        INVALID_INDEX
+    }
+
+    enum SacrificeStatus {
+        SUCCESS
+        SAME_CARD
+        CARD_NOT_FOUND
+        CANT_SACRIFICE_OBSTACLE
+        CANT_POWER_OBSTACLE
+    }
+}
+
+package "gameplay" {
+    class Board {
+        + Board()
+        + placeEnemyIntention(card: Card, index: int): boolean
+        + placeCard(card: Card, index: int, side: Side): boolean
+        + getCard(index: int, side: Side): Optional<Card>
+        + moveEnemyIntention()
+        + removeCard(index: int, side: Side)
+        + getPlayerLine(): Optional<Card>[]
+        + getEnemyLine(): Optional<Card>[]
+        + getEnemyIntentionsLine(): Optional<Card>[]
+    }
+
+    class Player {
+        - _bloodStock: int
+        - _boneStock: int
+        + Player()
+        + draw()
+        + newGame()
+        + getHand(): Hand
+        + addBloodStock()
+        + removeBloodStock(quantity: int)
+        + getBloodStock(): int
+        + resetBlood()
+        + addBoneStock()
+        + removeBoneStock(quantity: int)
+        + getBoneStock(): int
+        + getDeck(): Deck
+        + getInitialDeck(): Deck
+    }
+
+    class Deck {
+        - Deck()
+        + {static} initialDeck(source: Deck): Deck
+        + {static} randomDeck(): Deck
+        + shuffle()
+        + addCard(carte: Card)
+        + draw(): Card
+        + getSizeDeck(): int
+        + isEmpty(): boolean
+    }
+
+    class Hand {
+        + Hand(deck: Deck)
+        + draw(deck: Deck)
+        + retire(index: int)
+        + containsCard(card: Card): boolean
+        + getCard(index: int): Optional<Card>
+        + getSize(): int
+        + addCard(card: Card)
+    }
+
+    class ScoreManager {
+        + ScoreManager()
+        - _score: int = 0
+        + addPoint(points: int, side: Side)
+        + getCurrentScore(): int
+        + playerVictory(): boolean
+        + enemyVictory(): boolean
+        + isGameOver(): boolean
+    }
+
+    class Battle {
+        + Battle()
+        + {static} basicAttack(attacker: Side, index: int, attack: int, scoreManager: ScoreManager, cardDefenderOPT: Optional<Card>, board: Board, attackHistory: ArrayList<AttackData>)
+        + {static} flyableAttack(attacker: Side, index: int, attack: int, scoreManager: ScoreManager, card: Optional<Card>, board: Board, attackHistory: ArrayList<AttackData>)
+        + {static} flyableAttack(attacker: Side, index: int, attack: int, scoreManager: ScoreManager, card: Optional<Card>, board: Board)
+        + attack(attacker: Side, defender: Side, score: ScoreManager, defenderPlayer: Player, board: Board, attackHistory: ArrayList<AttackData>)
+        + killCard(index: int, side: Side, defenderPlayer: Player, board: Board): boolean
+    }
+
+    class AttackData {
+        - _attackerName: String
+        - _targetName: String
+        - _damageDealt: int
+        - _isLethal: boolean
+        - _overkillDamage: int
+        + AttackData(attacker: String, target: String, damage: int, lethal: boolean, overkill: int)
+        + getAttackerName(): String
+        + getTargetName(): String
+        + getDamageDealt(): int
+        + isLethal(): boolean
+        + getOverkillDamage(): int
+    }
+
+    enum Side {
+        PLAYER
+        ENEMY
+        INTENTION
+    }
+}
+
+package "Cards" {
+    interface Attacker {
+        + attack(attacker: Side, index: int, scoreManager: ScoreManager, card: Optional<Card>, board: Board, attackHistory: ArrayList<AttackData>)
+    }
+
+    abstract class Card {
+        - _nom: String
+        - _healthPoint: int
+        + Card(name: String, hp: int)
+        + get_healthPoint(): int
+        + get_nom(): String
+        + takeDamage(damage: int): int
+        + {static} getRandomAnimalCard(): Card
+        + {static} getRandomObstacleCard(): Card
+        + getAttack(): int
+        + displayHp(): String
+        + displayAttack(): String
+        + displaySigil(): String
+        + displayPower(index: int): String
+        + {abstract} getBlood(): int
+        + {abstract} getBone(): int
+        + sacrifice(player: Player, board: Board, index: int): boolean
+        + hasPower(powerName: String): boolean
+        + addPower(p: Power): boolean
+        + modifAttack(modif: int)
+        + setAttack(modif: int)
+        + removePower(p: Power)
+        + getPowers(index: int): Optional<Power>
+        + getSizePower(): int
+        + takeMortalDamage()
+    }
+
+    package "Animals" {
+        abstract class AnimalsCard {
+            - _attack: int
+            - _blood: int
+            - _bone: int
+            + AnimalsCard(name: String, hp: int, attack: int, blood: int, bone: int)
+            + attack(attacker: Side, index: int, scoreManager: ScoreManager, card: Optional<Card>, board: Board, attackHistory: ArrayList<AttackData>)
+            + getAttack(): int
+            + displayAttack(): String
+            + getBlood(): int
+            + getBone(): int
+            + sacrifice(player: Player, board: Board, index: int): boolean
+            + modifAttack(modif: int)
+            + setAttack(modif: int)
+            + takeMortalDamage()
+            + addPower(p: Power): boolean
+            + displayPower(index: int): String
+            + hasPower(powerName: String): boolean
+            + removePower(p: Power)
+            + getPowers(index: int): Optional<Power>
+            + getSizePower(): int
+        }
+
+        package "Powers" {
+            abstract class Power {
+                + Power()
+                + getName(): String
+                + stinkyPower(enemyAttack: int): int
+                + contactKillerPower(cardDefender: Card)
+                + multiLivesPower(player: Player, board: Board, index: int): boolean
+                + growthPower(currentCard: Card): Card
+                + sharpSpikesPower(cardAttacker: Card)
+                + sprinterPower(board: Board, currentIndex: int, side: Side): int
+            }
+
+            class ContactKiller extends Power {
+                + ContactKiller()
+                + getName(): String
+                + contactKillerPower(cardDefender: Card)
+            }
+            class Growth extends Power {
+                + Growth()
+                - _turnsOnBoard: int = 0
+                + getName(): String
+                + growthPower(currentCard: Card): Card
+            }
+            class MultiLives extends Power {
+                + MultiLives()
+                + getName(): String
+                + multiLivesPower(player: Player, board: Board, index: int): boolean
+            }
+            class SharpSpikes extends Power {
+                + SharpSpikes()
+                + getName(): String
+                + sharpSpikesPower(cardAttacker: Card)
+            }
+            class Sprinter extends Power {
+                + Sprinter()
+                + getName(): String
+                + sprinterPower(board: Board, currentIndex: int, side: Side): int
+            }
+            class Stinky extends Power {
+                + Stinky()
+                + getName(): String
+                + stinkyPower(attack: int): int
+            }
+        }
+
+        class Bug extends AnimalsCard {
+            + Bug()
+        }
+        class Cat extends AnimalsCard {
+            + Cat()
+        }
+        class Coyote extends AnimalsCard {
+            + Coyote()
+        }
+        class Ermine extends AnimalsCard {
+            + Ermine()
+        }
+        class Grizzly extends AnimalsCard {
+            + Grizzly()
+        }
+        class Moose extends AnimalsCard {
+            + Moose()
+        }
+        class Porcupine extends AnimalsCard {
+            + Porcupine()
+        }
+        class Raven extends AnimalsCard {
+            + Raven()
+            + attack(attacker: Side, index: int, scoreManager: ScoreManager, card: Optional<Card>, board: Board, attackHistory: ArrayList<AttackData>)
+            + displaySigil(): String
+        }
+        class Sparrow extends AnimalsCard {
+            + Sparrow()
+            + attack(attacker: Side, index: int, scoreManager: ScoreManager, card: Optional<Card>, board: Board, attackHistory: ArrayList<AttackData>)
+            + displaySigil(): String
+        }
+        class Squirrel extends AnimalsCard {
+            + Squirrel()
+        }
+        class Viper extends AnimalsCard {
+            + Viper()
+        }
+        class Wolf extends AnimalsCard {
+            + Wolf()
+        }
+        class WolfPup extends AnimalsCard {
+            + WolfPup()
+        }
+    }
+
+    package "Obstacles" {
+        abstract class ObstaclesCard {
+            + ObstaclesCard(name: String, hp: int)
+            + attack(attacker: Side, index: int, scoreManager: ScoreManager, card: Optional<Card>, board: Board, attackHistory: ArrayList<AttackData>)
+            + getBone(): int
+            + getBlood(): int
+            + addPower(p: Power): boolean
+        }
+        class Fir extends ObstaclesCard {
+            + Fir()
+        }
+        class Rock extends ObstaclesCard {
+            + Rock()
+        }
+    }
+}
+
+package "Display" {
+    class Display {
+        + Display()
+        + {static} start()
+        + {static} DisplayBoard(engine: Game)
+        + {static} constructDeck(index: int, engine: Game)
+        + {static} DisplayLine(line: Optional<Card>[], nbLine: int)
+        + {static} constructLineCard(line: Optional<Card>[], index: int, nbLine: int, lastIndex: int)
+        + {static} DisplayHand(engine: Game)
+    }
+}
+
+class Main {
+    + Main()
+    + {static} main(args: String[])
+}
+
+Main --> GameDisplay
+Main --> Game
+Display --> Game
+
+Attacker <|.. Card
+Card <|-- AnimalsCard
+Card <|-- ObstaclesCard
+
+Game *-- "1" Board : - _board
+Game *-- "1" Player : - _player
+Game *-- "1" Player : - _ennemy
+Game *-- "1" ScoreManager : - _score
+Game *-- "1" Battle : - _battlePhase
+Game *-- "0..*" AttackData : - _attackHistory
+
+GameDisplay *-- "1" Player : - _player
+
+Player *-- "1" Deck : - _deck
+Player *-- "1" Deck : - _initialDeck
+Player *-- "1" Hand : - _hand
+
+Board o-- "*" Card : - _playerLine
+Board o-- "*" Card : - _enemyLine
+Board o-- "*" Card : - _enemyIntentions
+Deck o-- "*" Card : - _cards
+Hand o-- "*" Card : - _handCards
+
+AnimalsCard *-- "*" Power : - _powers
+
+Game ..> DrawStatus
+Game ..> PlaceStatus
+Game ..> SacrificeStatus
+Game ..> Side
+Board ..> Side
+ScoreManager ..> Side
+Battle ..> Side
+Attacker ..> Side
+Card ..> Side
+AnimalsCard ..> Side
+Power ..> Side
+ObstaclesCard ..> Side
+
+@enduml

@@ -1,0 +1,290 @@
+@startuml
+
+package Cards {
+
+    interface Attacker
+    {
+        + attack(Player attacker, int index, ScoreManager scoreManager, Card card)
+    }
+    abstract class Card implements Attacker {
+        - String _nom
+        - int _healthPoint
+
+        + Card(String name, int hp)
+        + int get_healthPoint()
+        + String get_nom()
+        + int takeDamage(int damage)
+        + static Card getRandomAnimalCard()
+        + static Card getRandomObstacleCard()
+        + int getAttack()
+    }
+
+    package Powers
+    {
+        interface Power
+        {
+        }
+
+        class ContactKiller implements Power
+        {
+        }
+
+        class Growth implements Power
+        {
+        }
+
+        class MultiLives implements Power
+        {
+        }
+
+        class SharpSpikes implements Power
+        {
+        }
+
+        class Sprinter implements Power
+        {
+        }
+
+        class Stinky implements Power
+        {
+        }
+    }
+
+    package Animals {
+
+
+        abstract class AnimalsCard {
+            - int _attack
+            - int _blood
+            - int _bone
+
+            + AnimalsCard(String name, int hp, int attack, int blood, int bone)
+            + attack(Player attacker, int index, ScoreManager scoreManager, Card card)
+            + int getAttack()
+        }
+
+        class Cat extends AnimalsCard {
+            + Cat()
+        }
+
+        class Grizzly extends AnimalsCard {
+            + Grizzly()
+        }
+
+        class Coyote extends AnimalsCard {
+            + Coyote()
+        }
+
+        class Sparrow extends AnimalsCard {
+            + Sparrow()
+        }
+
+        class Raven extends AnimalsCard {
+            + Raven()
+        }
+
+        class Squirrel extends AnimalsCard {
+             + Squirrel()
+        }
+
+        class Ermine extends AnimalsCard {
+            + Ermine()
+        }
+
+        class WolfPup extends AnimalsCard {
+            + WolfPup()
+        }
+
+        class Wolf extends AnimalsCard {
+             + Wolf()
+        }
+
+        class Bug extends AnimalsCard {
+            + Bug()
+        }
+
+        class Moose extends AnimalsCard
+        {
+            + Moose()
+        }
+
+        class Viper extends AnimalsCard
+        {
+            + Viper()
+        }
+
+        class Porcupine extends AnimalsCard
+        {
+            + Porcupine()
+        }
+    }
+
+    package Obstacles {
+        abstract class ObstaclesCard {
+            + ObstaclesCard(String name, int hp)
+            + attack(Player attacker, int index, ScoreManager scoreManager, Card card)
+        }
+
+        class Rock extends ObstaclesCard {
+            + Rock()
+        }
+
+        class Fir extends ObstaclesCard {
+            + Fir()
+        }
+    }
+}
+
+package Display {
+    class Display {
+        + {static} start(): void
+        + {static} DisplayBoard(engine: Game): void
+        + {static} constructDeck(index: int, engine: Game): void
+        + {static} DisplayLine(line: Optional<Card>[], nbLine: int): void
+        + {static} constructLineCard(line: Optional<Card>[], index: int, nbLine: int): void
+    }
+}
+
+package gameplay {
+    class Player {
+        - Deck _deck
+        - Hand _hand
+
+        + Player()
+        + draw()
+        + Hand getHand()
+    }
+
+    class Deck {
+        - Deque<Card> _cards
+
+        - Deck()
+        + static Deck randomDeck()
+        + shuffle()
+        + addCard(Card carte)
+        + Card draw()
+    }
+
+    class Hand {
+        - ArrayList<Card> _handCards
+
+        + Hand(Deck deck)
+        + draw(Deck deck)
+        + retire(int index)
+        + boolean containsCard(Card card)
+    }
+
+    class Board {
+        - Card[] _enemyLine
+        - Card[] _playerLine
+        - Card[] _enemyIntentions
+        - Player _player
+
+        + Board(Player player)
+        + boolean placeEnemyIntention(Card card, int index)
+        + boolean placePlayerCard(Card card, int index)
+        + boolean placeEnemyCard(Card card, int index)
+        + Card getCard(int index, Player player)
+    }
+
+    class Battle {
+        - Board board
+        - ScoreManager scoreManager
+
+        - initialize()
+        + static basicAttack(Player attacker, int index, int attack, ScoreManager scoreManager, Card card)
+        + static flyableAttack(Player attacker, int index, int attack, ScoreManager scoreManager, Card card)
+        - attack(Player attacker, Player defender)
+    }
+
+    class ScoreManager {
+        - int _score
+        - Player _player
+
+        + ScoreManager(Player player)
+        + addPoint(int points, Player player)
+        + int getScore()
+        + boolean playerVictory()
+        + boolean enemyVictory()
+    }
+}
+
+package Core
+{
+class GameDisplay
+{
+    - _playerWins: int
+    - _enemyWins: int
+    - _matchNumber: int
+
+    + launchGame(): void
+    + playerMenu(currentGame: Game): void
+    - clearConsole(): void
+}
+
+class Game {
+    - _hasDraw: boolean
+    - _turnCounter: int
+
+    + Game()
+    + generateInitialObstacle(): void
+    + placeCard(indexHand: int, indexBoard: int): PlaceStatus
+    + getBoard(): Board
+    + getPlayer(): Player
+    + draw(player: Player): DrawStatus
+    + sacrifice(index: int): boolean
+    + getScore(): ScoreManager
+    + planOpponentNextTurn(): void
+    + isGameOver(): boolean
+    + playerWin(): boolean
+    + getTurnCounter(): int
+    + startNewTurn(): void
+    + caseTrad(input: String): int
+    + executeCombatPhase(attacker: Side, defender: Side, defenderPlayer: Player): void
+    + getEnemy(): Player
+}
+
+enum PlaceStatus {
+        SUCCESS
+        NOT_ENOUGH_BLOOD
+        NOT_ENOUGH_BONES
+        CELL_OCCUPIED
+        CARD_NOT_FOUND
+        INVALID_INDEX
+    }
+
+ enum DrawStatus {
+         SUCCESS
+         ALREADY_DRAWN
+         EMPTY_DECK
+     }
+}
+
+
+
+
+
+class Main {
+    + static main(String[] args)
+}
+
+
+
+AnimalsCard <-up- Card
+ObstaclesCard <-up- Card
+Hand <-up- Player
+Deck <-up- Player
+Card <-up- Deck
+Card <-up- Hand
+Game -down-> Player
+Game -down-> Board
+Game -down-> ScoreManager
+Game -down-> Display
+Main -down-> Game
+Battle -down-> Board
+Battle -down-> ScoreManager
+Board -down-> Player
+Board -down-> Card
+ScoreManager -down-> Player
+
+@enduml
